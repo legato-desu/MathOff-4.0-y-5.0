@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  base: '/MathOff-4.0-y-5.0/',
   server: {
     port: 5173,
-    proxy: { '/api': 'http://127.0.0.1:8000' },
+    proxy: { 
+      '/api': 'http://127.0.0.1:8000' 
+    },
   },
 });

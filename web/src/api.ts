@@ -5,8 +5,17 @@ export type User = {
   role: string | null;
 };
 
-const base = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
-const storageKey = 'mathoff-web-session';
+const getBackendBase = (): string => {
+  const hostname = window.location.hostname;
+
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://127.0.0.1:8000';
+  }
+
+  return 'https://onrender.com';
+};
+
+const base = getBackendBase();const storageKey = 'mathoff-web-session';
 
 export type Session = { user: User; access: string; refresh: string };
 
