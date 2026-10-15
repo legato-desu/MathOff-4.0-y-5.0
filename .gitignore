@@ -1,0 +1,30 @@
+# --- Dependencias y Entornos Virtuales ---
+**/node_modules/
+**/.venv/
+**/.ocr-venv/
+**/ocr-models/
+**/dist/
+**/.expo/
+**/.tsconfig.tsbuildinfo
+
+# --- Archivos de Configuración Local y Secretos (CRÍTICO) ---
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# --- Bases de Datos Locales ---
+**/db.sqlite3
+**/*.db
+**/*.sqlite3
+
+# --- Python y Caché ---
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+
+# --- Archivos del Sistema y Editores ---
+.DS_Store
+Thumbs.db
+**/.vscode/
