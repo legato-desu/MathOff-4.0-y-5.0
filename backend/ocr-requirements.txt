@@ -1,0 +1,3 @@
+# Instalar solo en el servicio OCR, nunca en el backend Django ni en Expo.
+# PyTorch CPU se instala por separado según README.md.
+pix2text==1.1.4
