@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
 from rest_framework_simplejwt.views import TokenRefreshView
 from users.views import CustomLoginView
 from ejercicios.scan_views import ScanEquationView
 
 urlpatterns = [
+    path("health/", lambda request: JsonResponse({"status": "ok", "service": "MathOff API"}), name="health"),
     path("admin/", admin.site.urls),
 
     path("api/", include("users.urls")),

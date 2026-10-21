@@ -101,3 +101,14 @@ La administración cambia `is_active` y conserva el usuario y su historial. La A
 ## Despliegue AWS y OCR
 
 Mantén `backend/requirements.txt` como entorno de Django: **no agregues Pix2Text, PyTorch ni TorchVision allí**. `backend/ocr-requirements.txt` corresponde exclusivamente al proceso OCR. Pix2Text y los pesos del modelo elevan notablemente el tamaño de la imagen y el consumo de memoria; despliega `ocr_service.py` como servicio separado en un contenedor/servicio con CPU y memoria asignadas, y configura `MATHOFF_OCR_URL` en Django para apuntar a ese servicio. No despliegues el proceso OCR dentro del mismo proceso Gunicorn del API. Instala PyTorch CPU siguiendo el comando oficial de CPU que aparece arriba, no una variante CUDA en un servidor CPU.
+
+
+## Despliegue en Render (configuración corregida)
+
+El archivo `render.yaml` configura la API Django, PostgreSQL y la web estática.
+1. Sube esta carpeta raíz completa a GitHub.
+2. En Render elige **New + → Blueprint** y conecta ese repositorio.
+3. Render leerá `render.yaml`; confirma la creación de los servicios.
+4. Verifica que `mathoff-api` responda en `/health/` y abre la URL pública de `mathoff-web`.
+
+La web obtiene la API desde `VITE_API_URL`. La API acepta `DATABASE_URL` (la variable estándar de Render) y `MATHOFF_DATABASE_URL` para instalaciones anteriores. La base de datos gratuita de Render puede tener límites de disponibilidad/retención según el plan vigente; conserva copias de seguridad de los datos importantes.

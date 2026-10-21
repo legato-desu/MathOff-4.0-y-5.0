@@ -1,5 +1,4 @@
 {
-  "homepage": "https://github.io",
   "name": "mathoff-web",
   "private": true,
   "version": "1.0.0",
@@ -15,8 +14,7 @@
   "dependencies": {
     "mathjs": "^15.2.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "save-dev": "^0.0.1-security"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",
