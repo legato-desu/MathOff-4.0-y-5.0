@@ -131,6 +131,7 @@ CORS_ALLOWED_ORIGINS = [
     for origin in cors_origins_raw.replace("\n", "").split(",")
     if origin.strip()
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Copia los orígenes de CORS hacia CSRF para asegurar peticiones POST seguras
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()

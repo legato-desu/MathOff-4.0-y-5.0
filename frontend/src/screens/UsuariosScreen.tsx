@@ -1,15 +1,14 @@
-
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  TouchableWithoutFeedback,
   ActivityIndicator,
   Alert,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,31 +23,33 @@ interface Usuario {
   id: number;
   username: string;
   email: string;
-  role: string | { name?: string; nombre?: string; id?: number };
+  role: string | number | { name?: string; nombre?: string; id?: number };
   is_active?: boolean;
   isActive?: boolean;
   activo?: boolean;
 }
 
 const normalizeRole = (value: unknown): RoleName | null => {
-  const raw =
-    typeof value === "object" && value !== null
-      ? (value as any).name ??
-        (value as any).nombre ??
-        (value as any).id
-      : value;
+  if (typeof value === "object" && value !== null) {
+    const obj = value as { name?: string; nombre?: string; id?: number };
+    value = obj.name ?? obj.nombre ?? obj.id;
+  }
 
-  const role = String(raw ?? "")
+  if (String(value) === "5") return "Estudiante";
+  if (String(value) === "6") return "Docente";
+  if (String(value) === "1") return "Root";
+  if (String(value) === "2") return "Administrador";
+
+  const roleName = String(value ?? "")
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (["root", "superusuario"].includes(role)) return "Root";
-  if (["admin", "administrador"].includes(role)) return "Administrador";
-  if (["docente", "profesor"].includes(role)) return "Docente";
-  if (role === "estudiante") return "Estudiante";
-
+  if (["root", "superusuario"].includes(roleName)) return "Root";
+  if (["admin", "administrador"].includes(roleName)) return "Administrador";
+  if (["docente", "profesor"].includes(roleName)) return "Docente";
+  if (roleName === "estudiante") return "Estudiante";
   return null;
 };
 
@@ -89,7 +90,6 @@ export default function UsuariosScreen() {
   const request = useCallback(
     async (path: string, options: RequestInit = {}) => {
       const token = await AsyncStorage.getItem("accessToken");
-
       if (!token) {
         throw new Error("Tu sesión ha expirado. Inicia sesión nuevamente.");
       }
@@ -103,26 +103,21 @@ export default function UsuariosScreen() {
         },
       });
 
-      const text = await response.text();
+      const responseText = await response.text();
       let data: any = {};
-
       try {
-        data = text ? JSON.parse(text) : {};
+        data = responseText ? JSON.parse(responseText) : {};
       } catch {
-        data = { detail: text };
+        data = { detail: responseText };
       }
 
       if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error(
-            "No tienes permisos para realizar esta operación."
-          );
-        }
-
         throw new Error(
           data.detail ||
             data.message ||
-            `Error del servidor (${response.status}).`
+            (response.status === 403
+              ? "No tienes permisos para realizar esta operación."
+              : `Error del servidor (${response.status}).`)
         );
       }
 
@@ -135,48 +130,42 @@ export default function UsuariosScreen() {
     if (!canManageUsers) return;
 
     setLoading(true);
-
     try {
       const data = await request("/users/");
-      const list = Array.isArray(data) ? data : data.results;
-
+      const list = Array.isArray(data) ? data : data?.results;
       if (!Array.isArray(list)) {
         throw new Error("La API no devolvió una lista de usuarios válida.");
       }
-
       setUsers(list);
-    } catch (error: any) {
-      openErrorModal(error.message || "Error cargando usuarios.");
+    } catch (error: unknown) {
+      openErrorModal(
+        error instanceof Error ? error.message : "Error cargando usuarios."
+      );
     } finally {
       setLoading(false);
     }
   }, [canManageUsers, request]);
 
   useEffect(() => {
-    cargarUsuarios();
+    void cargarUsuarios();
   }, [cargarUsuarios]);
 
-  // Jerarquía: un usuario solo puede gestionar rangos inferiores.
   const puedeGestionar = (target: Usuario): boolean => {
     const targetRole = normalizeRole(target.role);
+    const myId = Number(currentUser?.user_id ?? currentUser?.id ?? 0);
+    const targetId = Number(target.id);
 
-    if (!targetRole || !currentRole) return false;
-    if (target.id === Number((currentUser as any)?.user_id ?? (currentUser as any)?.id)) {
-      return false;
-    }
+    if (!targetRole || !currentRole || targetId === myId) return false;
 
     if (currentRole === "Root") {
       return ["Administrador", "Docente", "Estudiante"].includes(targetRole);
     }
-
     if (currentRole === "Administrador") {
       return ["Docente", "Estudiante"].includes(targetRole);
     }
-
     if (currentRole === "Docente") {
       return targetRole === "Estudiante";
     }
-
     return false;
   };
 
@@ -184,8 +173,6 @@ export default function UsuariosScreen() {
     if (typeof user.is_active === "boolean") return user.is_active;
     if (typeof user.isActive === "boolean") return user.isActive;
     if (typeof user.activo === "boolean") return user.activo;
-
-    // No asumir que una cuenta está inactiva si la API no envía su estado.
     return true;
   };
 
@@ -208,21 +195,24 @@ export default function UsuariosScreen() {
         body: JSON.stringify({
           username: username.trim(),
           email: email.trim(),
-          role,
+          role: Number(role) || role.trim(),
         }),
       });
-
       limpiarFormulario();
       await cargarUsuarios();
       openSuccessModal("Usuario creado correctamente.");
-    } catch (error: any) {
-      openErrorModal(error.message || "No se pudo crear el usuario.");
+    } catch (error: unknown) {
+      openErrorModal(
+        error instanceof Error ? error.message : "No se pudo crear el usuario."
+      );
     }
   };
 
   const editarUsuario = (user: Usuario) => {
     if (!puedeGestionar(user)) {
-      openErrorModal("No puedes editar usuarios de tu mismo rango o de uno superior.");
+      openErrorModal(
+        "No puedes editar usuarios de tu mismo rango o de uno superior."
+      );
       return;
     }
 
@@ -237,34 +227,35 @@ export default function UsuariosScreen() {
   };
 
   const guardarCambios = async () => {
-    if (!editandoId) return;
+    if (editandoId === null) return;
 
     const user = users.find((item) => item.id === editandoId);
-
     if (!user || !puedeGestionar(user)) {
       openErrorModal("No tienes permiso para modificar este usuario.");
+      return;
+    }
+    if (!role.trim()) {
+      openErrorModal("Ingresa el ID o nombre del rol.");
       return;
     }
 
     try {
       await request(`/users/${editandoId}/`, {
         method: "PATCH",
-        body: JSON.stringify({
-          username: username.trim(),
-          email: email.trim(),
-          role,
-        }),
+        body: JSON.stringify({ role: Number(role) || role.trim() }),
       });
-
       limpiarFormulario();
       await cargarUsuarios();
       openSuccessModal("Usuario actualizado correctamente.");
-    } catch (error: any) {
-      openErrorModal(error.message || "No se pudo actualizar el usuario.");
+    } catch (error: unknown) {
+      openErrorModal(
+        error instanceof Error
+          ? error.message
+          : "No se pudo actualizar el usuario."
+      );
     }
   };
 
-  // Utiliza PATCH sobre el usuario existente; no elimina su registro.
   const cambiarEstadoUsuario = (user: Usuario) => {
     if (!puedeGestionar(user)) {
       openErrorModal("No puedes gestionar una cuenta de este rango.");
@@ -273,6 +264,7 @@ export default function UsuariosScreen() {
 
     const habilitar = !estaActivo(user);
     const accion = habilitar ? "habilitar" : "deshabilitar";
+    const endpointPath = habilitar ? "enable" : "disable";
 
     Alert.alert(
       `${habilitar ? "Habilitar" : "Deshabilitar"} cuenta`,
@@ -284,31 +276,25 @@ export default function UsuariosScreen() {
           style: habilitar ? "default" : "destructive",
           onPress: async () => {
             setProcessingId(user.id);
-
             try {
-              // El modelo de usuario Django normalmente utiliza is_active.
-              await request(`/users/${user.id}/`, {
-                method: "PATCH",
-                body: JSON.stringify({ is_active: habilitar }),
+              await request(`/users/${user.id}/${endpointPath}/`, {
+                method: "POST",
               });
-
               setUsers((previous) =>
                 previous.map((item) =>
-                  item.id === user.id
-                    ? { ...item, is_active: habilitar }
-                    : item
+                  item.id === user.id ? { ...item, is_active: habilitar } : item
                 )
               );
-
               openSuccessModal(
                 `La cuenta de ${user.username} fue ${
                   habilitar ? "habilitada" : "deshabilitada"
                 } correctamente.`
               );
-            } catch (error: any) {
+            } catch (error: unknown) {
               openErrorModal(
-                error.message ||
-                  "No se pudo cambiar el estado de la cuenta."
+                error instanceof Error
+                  ? error.message
+                  : "No se pudo cambiar el estado de la cuenta."
               );
             } finally {
               setProcessingId(null);
@@ -318,6 +304,16 @@ export default function UsuariosScreen() {
       ]
     );
   };
+
+  const fieldStyle = {
+    backgroundColor: colors.card,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 12,
+  } as const;
 
   if (!canManageUsers) {
     return (
@@ -356,261 +352,205 @@ export default function UsuariosScreen() {
   }
 
   return (
-    <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: colors.background,
-      }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-    >
-      <Text
-        style={{
-          color: colors.text,
-          fontSize: 26,
-          fontWeight: "bold",
-          marginBottom: 8,
-        }}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
       >
-        Gestión de Usuarios
-      </Text>
-
-      <Text style={{ color: colors.textSecondary, marginBottom: 20 }}>
-        Sesión: {currentUser?.username ?? "Usuario"} · {currentRole ?? "Sin rol"}
-      </Text>
-
-      <View
-        style={{
-          backgroundColor: colors.surface,
-          borderRadius: 16,
-          padding: 18,
-          marginBottom: 24,
-          borderWidth: 1,
-          borderColor: colors.border,
-        }}
-      >
-        <TextInput
-          placeholder="Nombre de usuario"
-          placeholderTextColor={colors.textMuted}
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
+        <View
           style={{
-            backgroundColor: colors.card,
-            color: colors.text,
+            backgroundColor: colors.surface,
+            borderRadius: 16,
+            padding: 18,
+            marginBottom: 24,
             borderWidth: 1,
             borderColor: colors.border,
-            padding: 14,
-            borderRadius: 12,
-            marginBottom: 12,
-          }}
-        />
-
-        <TextInput
-          placeholder="Correo electrónico"
-          placeholderTextColor={colors.textMuted}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          style={{
-            backgroundColor: colors.card,
-            color: colors.text,
-            borderWidth: 1,
-            borderColor: colors.border,
-            padding: 14,
-            borderRadius: 12,
-            marginBottom: 12,
-          }}
-        />
-
-        <TextInput
-          placeholder="ID del rol (según la base de datos)"
-          placeholderTextColor={colors.textMuted}
-          value={role}
-          onChangeText={setRole}
-          style={{
-            backgroundColor: colors.card,
-            color: colors.text,
-            borderWidth: 1,
-            borderColor: colors.border,
-            padding: 14,
-            borderRadius: 12,
-            marginBottom: 15,
-          }}
-        />
-
-        <TouchableOpacity
-          onPress={editandoId ? guardarCambios : crearUsuario}
-          style={{
-            backgroundColor: colors.primary,
-            padding: 15,
-            borderRadius: 12,
-            alignItems: "center",
           }}
         >
-          <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-            {editandoId ? "Guardar cambios" : "Crear usuario"}
-          </Text>
-        </TouchableOpacity>
-
-        {editandoId !== null && (
-          <TouchableOpacity
-            onPress={limpiarFormulario}
-            style={{ padding: 12, alignItems: "center", marginTop: 4 }}
+          <Text
+            style={{
+              color: colors.text,
+              fontSize: 20,
+              fontWeight: "bold",
+              marginBottom: 16,
+            }}
           >
-            <Text style={{ color: colors.textSecondary }}>Cancelar edición</Text>
+            {editandoId !== null ? "Editar usuario" : "Crear usuario"}
+          </Text>
+          <TextInput
+            placeholder="Nombre de usuario"
+            placeholderTextColor={colors.textMuted}
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            editable={editandoId === null}
+            style={[fieldStyle, editandoId !== null && { opacity: 0.65 }]}
+          />
+          <TextInput
+            placeholder="Correo electrónico"
+            placeholderTextColor={colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            editable={editandoId === null}
+            style={[fieldStyle, editandoId !== null && { opacity: 0.65 }]}
+          />
+          <TextInput
+            placeholder="ID del rol (5 Estudiante, 6 Docente)"
+            placeholderTextColor={colors.textMuted}
+            value={role}
+            onChangeText={setRole}
+            autoCapitalize="none"
+            style={fieldStyle}
+          />
+          <TouchableOpacity
+            onPress={() => void (editandoId !== null ? guardarCambios() : crearUsuario())}
+            style={{
+              backgroundColor: colors.primary,
+              padding: 15,
+              borderRadius: 12,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#FFFFFF", fontWeight: "bold" }}>
+              {editandoId !== null ? "Guardar cambios" : "Crear usuario"}
+            </Text>
           </TouchableOpacity>
-        )}
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 14,
-        }}
-      >
-        <Text style={{ color: colors.text, fontSize: 20, fontWeight: "bold" }}>
-          Usuarios registrados
-        </Text>
-
-        <TouchableOpacity onPress={cargarUsuarios} disabled={loading}>
-          <Ionicons name="refresh" size={24} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} />
-      ) : users.length === 0 ? (
-        <Text style={{ color: colors.textSecondary }}>
-          No hay usuarios disponibles.
-        </Text>
-      ) : (
-        users.map((user) => {
-          const permitido = puedeGestionar(user);
-          const activo = estaActivo(user);
-          const targetRole = normalizeRole(user.role);
-
-          return (
-            <View
-              key={user.id}
-              style={{
-                backgroundColor: colors.surface,
-                padding: 16,
-                borderRadius: 16,
-                marginBottom: 16,
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
+          {editandoId !== null && (
+            <TouchableOpacity
+              onPress={limpiarFormulario}
+              style={{ padding: 12, alignItems: "center", marginTop: 4 }}
             >
+              <Text style={{ color: colors.textSecondary }}>Cancelar edición</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 14,
+          }}
+        >
+          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "bold" }}>
+            Usuarios
+          </Text>
+          <TouchableOpacity onPress={() => void cargarUsuarios()} accessibilityRole="button">
+            <Ionicons name="refresh" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.primary} />
+        ) : users.length === 0 ? (
+          <Text style={{ color: colors.textSecondary, textAlign: "center", marginTop: 16 }}>
+            No hay usuarios para mostrar.
+          </Text>
+        ) : (
+          users.map((user) => {
+            const permitido = puedeGestionar(user);
+            const activo = estaActivo(user);
+            const targetRole = normalizeRole(user.role);
+
+            return (
               <View
+                key={user.id}
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
+                  backgroundColor: colors.surface,
+                  padding: 16,
+                  borderRadius: 16,
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
                 }}
               >
-                <View style={{ flex: 1, paddingRight: 8 }}>
-                  <Text
-                    style={{
-                      color: colors.text,
-                      fontWeight: "bold",
-                      fontSize: 18,
-                    }}
-                  >
-                    {user.username}
-                  </Text>
-
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      marginTop: 4,
-                    }}
-                  >
-                    {user.email}
-                  </Text>
-
-                  <Text style={{ color: colors.primary, marginTop: 6 }}>
-                    Rol: {targetRole ?? String(user.role ?? "Sin rol")}
-                  </Text>
-                </View>
-
                 <View
                   style={{
-                    backgroundColor: activo ? "#168B5822" : "#C0392B22",
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 20,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: activo ? "#168B58" : "#C0392B",
-                      fontWeight: "bold",
-                      fontSize: 12,
-                    }}
-                  >
-                    {activo ? "Habilitado" : "Inhabilitado"}
-                  </Text>
-                </View>
-              </View>
-
-              {permitido ? (
-                <>
-                  <TouchableOpacity
-                    onPress={() => editarUsuario(user)}
-                    style={{
-                      backgroundColor: colors.button,
-                      padding: 13,
-                      borderRadius: 12,
-                      marginTop: 14,
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ color: colors.text, fontWeight: "bold" }}>
-                      Editar usuario
+                  <View style={{ flex: 1, paddingRight: 8 }}>
+                    <Text style={{ color: colors.text, fontSize: 17, fontWeight: "bold" }}>
+                      {user.username}
                     </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    disabled={processingId === user.id}
-                    onPress={() => cambiarEstadoUsuario(user)}
+                    <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
+                      {user.email}
+                    </Text>
+                    <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
+                      Rol: {targetRole ?? String(typeof user.role === "object" ? user.role.name ?? user.role.nombre ?? user.role.id ?? "Desconocido" : user.role)}
+                    </Text>
+                  </View>
+                  <View
                     style={{
-                      backgroundColor: activo ? "#C0392B" : "#168B58",
-                      padding: 13,
-                      borderRadius: 12,
-                      marginTop: 10,
-                      alignItems: "center",
-                      opacity: processingId === user.id ? 0.6 : 1,
+                      backgroundColor: activo ? "#168B5822" : "#C0392B22",
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: 20,
                     }}
                   >
-                    {processingId === user.id ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                        {activo ? "Deshabilitar cuenta" : "Habilitar cuenta"}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <Text
-                  style={{
-                    color: colors.textMuted,
-                    marginTop: 14,
-                    fontSize: 12,
-                  }}
-                >
-                  Tu rango no permite modificar esta cuenta.
-                </Text>
-              )}
-            </View>
-          );
-        })
-      )}
+                    <Text style={{ color: activo ? "#168B58" : "#C0392B", fontWeight: "600" }}>
+                      {activo ? "Activo" : "Inactivo"}
+                    </Text>
+                  </View>
+                </View>
 
-      <Modal visible={showModal} transparent animationType="fade">
+                {permitido ? (
+                  <View>
+                    <TouchableOpacity
+                      onPress={() => editarUsuario(user)}
+                      style={{
+                        backgroundColor: colors.button,
+                        padding: 13,
+                        borderRadius: 12,
+                        marginTop: 14,
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text style={{ color: "#FFFFFF", fontWeight: "bold" }}>Editar rol</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      disabled={processingId === user.id}
+                      onPress={() => cambiarEstadoUsuario(user)}
+                      style={{
+                        backgroundColor: activo ? "#C0392B" : "#168B58",
+                        padding: 13,
+                        borderRadius: 12,
+                        marginTop: 10,
+                        alignItems: "center",
+                        opacity: processingId === user.id ? 0.6 : 1,
+                      }}
+                    >
+                      {processingId === user.id ? (
+                        <ActivityIndicator color="#FFFFFF" />
+                      ) : (
+                        <Text style={{ color: "#FFFFFF", fontWeight: "bold" }}>
+                          {activo ? "Deshabilitar cuenta" : "Habilitar cuenta"}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                  ) : (
+                    <Text style={{ color: colors.textMuted, marginTop: 12, fontSize: 12 }}>
+                      No tienes permisos para modificar esta cuenta.
+                    </Text>
+                  )}
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+
+      <Modal
+        visible={showModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowModal(false)}
+      >
         <TouchableWithoutFeedback onPress={() => setShowModal(false)}>
           <View
             style={{
@@ -632,58 +572,37 @@ export default function UsuariosScreen() {
                 }}
               >
                 <Ionicons
-                  name={
-                    modalType === "success"
-                      ? "checkmark-circle"
-                      : "alert-circle"
-                  }
+                  name={modalType === "success" ? "checkmark-circle" : "alert-circle"}
                   size={60}
                   color={modalType === "success" ? colors.success : colors.error}
                 />
-
                 <Text
                   style={{
                     color: colors.text,
-                    fontSize: 22,
-                    fontWeight: "bold",
-                    marginTop: 15,
-                  }}
-                >
-                  {modalType === "success" ? "Éxito" : "Error"}
-                </Text>
-
-                <Text
-                  style={{
-                    color: colors.textSecondary,
+                    fontSize: 17,
                     textAlign: "center",
-                    marginTop: 12,
-                    fontSize: 16,
-                    lineHeight: 22,
+                    marginTop: 14,
                   }}
                 >
                   {modalMessage}
                 </Text>
-
                 <TouchableOpacity
                   onPress={() => setShowModal(false)}
                   style={{
                     marginTop: 25,
-                    backgroundColor:
-                      modalType === "success" ? colors.success : colors.primary,
+                    backgroundColor: modalType === "success" ? colors.success : colors.primary,
                     paddingVertical: 12,
                     paddingHorizontal: 40,
                     borderRadius: 12,
                   }}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-                    Entendido
-                  </Text>
+                  <Text style={{ color: "#FFFFFF", fontWeight: "bold" }}>Aceptar</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }

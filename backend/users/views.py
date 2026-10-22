@@ -110,4 +110,8 @@ class UserViewSet(viewsets.ModelViewSet):
 class RoleViewSet(viewsets.ModelViewSet):
     queryset = Role.objects.all().order_by("id")
     serializer_class = RoleSerializer
-    permission_classes = [IsAuthenticated, IsRoot]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsRoot()]
