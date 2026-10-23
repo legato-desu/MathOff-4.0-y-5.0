@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from rest_framework_simplejwt.views import TokenRefreshView
 from users.views import CustomLoginView
 from ejercicios.scan_views import ScanEquationView
+from reportes.views import EstadisticasDashboardView
 
 urlpatterns = [
     path("health/", lambda request: JsonResponse({"status": "ok", "service": "MathOff API"}), name="health"),
@@ -12,6 +13,7 @@ urlpatterns = [
     path("api/", include("users.urls")),
     path("api/ejercicios/", include("ejercicios.urls")),
     path("api/math/scan/", ScanEquationView.as_view(), name="scan_equation"),
+    path("api/estadisticas/", EstadisticasDashboardView.as_view(), name="estadisticas_dashboard"),
     path("api/respuestas/", include("respuestas.urls")),
 
     path("api/token/", CustomLoginView.as_view(), name="token_obtain_pair"),

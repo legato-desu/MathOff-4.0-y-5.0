@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api, login, readSession, register, saveSession, type Session } from './api';
 import Dashboard from './Dashboard';
+import Analytics from './Analytics';
 import Graph from './Graph';
 import Learning from './Learning';
 import Scanner from './Scanner';
 
-type Tab = 'Inicio' | 'Escáner' | 'Graficador' | 'Biblioteca' | 'Perfil' | 'Opciones';
-const icons: Record<Tab, string> = { Inicio: '⌂', Escáner: '▣', Graficador: '⌁', Biblioteca: '▤', Perfil: '♙', Opciones: '⚙' };
+type Tab = 'Inicio' | 'Escáner' | 'Graficador' | 'Biblioteca' | 'Perfil' | 'Analítica' | 'Opciones';
+const icons: Record<Tab, string> = { Inicio: '⌂', Escáner: '▣', Graficador: '⌁', Biblioteca: '▤', Perfil: '♙', Analítica: '▥', Opciones: '⚙' };
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(readSession);
@@ -33,9 +34,13 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem('mathoff-theme', dark ? 'dark' : 'light'); }, [dark]);
 
+  const roleName = (session?.user.role || '').toLocaleLowerCase();
+  const canSeeAnalytics = !!session && (['root', 'superusuario', 'administrador', 'admin', 'docente'].includes(roleName));
+
   function navigate(next: Tab) {
     setTab(next);
-    if ((next === 'Escáner' || next === 'Graficador' || next === 'Perfil') && !session) setAuthOpen(true);
+    if ((next === 'Escáner' || next === 'Graficador' || next === 'Perfil' || next === 'Analítica') && !session) setAuthOpen(true);
+    if (next === 'Analítica' && session && !canSeeAnalytics) setTab('Perfil');
   }
 
   function graph(expression: string) {
@@ -66,7 +71,7 @@ export default function App() {
     </header>
 
     <nav className="navigation" aria-label="Navegación principal">
-      {(['Inicio', 'Escáner', 'Graficador', 'Biblioteca', ...(session ? ['Perfil'] : []), 'Opciones'] as Tab[]).map(item =>
+      {(['Inicio', 'Escáner', 'Graficador', 'Biblioteca', ...(session ? ['Perfil'] : []), ...(canSeeAnalytics ? ['Analítica'] : []), 'Opciones'] as Tab[]).map(item =>
         <button key={item} className={tab === item ? 'nav-item active' : 'nav-item'} onClick={() => navigate(item)}><span>{icons[item]}</span>{item}</button>)}
     </nav>
 
@@ -79,6 +84,7 @@ export default function App() {
       {tab === 'Graficador' && (session ? <Graph incoming={incoming} userId={session.user.user_id} /> : <div className="panel gate"><h2>Graficador</h2><p>Inicia sesión para representar funciones.</p><button onClick={() => setAuthOpen(true)}>Iniciar sesión</button></div>)}
       {tab === 'Biblioteca' && <Learning onGraph={graph} />}
       {tab === 'Perfil' && session && <Dashboard user={session.user} />}
+      {tab === 'Analítica' && session && canSeeAnalytics && <Analytics user={session.user} />}
       {tab === 'Opciones' && <section className="panel settings"><div className="section-heading"><div><span className="eyebrow">Preferencias</span><h2>Opciones</h2></div></div>
         <label className="setting-row"><span>Tema oscuro</span><input type="checkbox" checked={dark} onChange={event => setDark(event.target.checked)} /></label>
         {session && <><div className="setting-row"><span>Correo electrónico</span><strong>{session.user.email}</strong></div>
