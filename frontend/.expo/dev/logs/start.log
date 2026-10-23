@@ -1116,3 +1116,6 @@
 {"_e":"metro:bundling:progress","_t":1792681207210,"id":"3","progress":0.9356247502651571,"total":2567,"current":2483}
 {"_e":"metro:bundling:progress","_t":1792681207321,"id":"3","progress":0.999,"total":2716,"current":2716}
 {"_e":"metro:bundling:done","_t":1792681207421,"id":"3","total":2716,"ms":2431.739737}
+{"_e":"metro:bundling:started","_t":1792681855073,"id":"6","platform":"android","environment":null,"entry":"index.ts"}
+{"_e":"metro:bundling:progress","_t":1792681855073,"id":"6","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1792681855155,"id":"6","total":1,"ms":82.577778}
