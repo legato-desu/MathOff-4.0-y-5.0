@@ -1119,3 +1119,11 @@
 {"_e":"metro:bundling:started","_t":1792681855073,"id":"6","platform":"android","environment":null,"entry":"index.ts"}
 {"_e":"metro:bundling:progress","_t":1792681855073,"id":"6","progress":0,"total":1,"current":0}
 {"_e":"metro:bundling:done","_t":1792681855155,"id":"6","total":1,"ms":82.577778}
+{"_e":"root:init","_t":1792855115669,"format":"v0-jsonl","version":"57.0.27"}
+{"_e":"env:mode","_t":1792855115671,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1792855115673,"mode":"development","files":["../../../.env"],"env":{"VITE_API_URL":"https://mathoff-4-0-y-5-0.onrender.com/api"}}
+{"_e":"devserver:start","_t":1792855115964,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../../../app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1792855116252,"serverRoot":"../../..","projectRoot":"../../..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"expo:dev-tools-plugin:load","_t":1792855116524,"plugins":[]}
+{"_e":"metro:instantiate","_t":1792855120746,"atlas":false,"workers":3,"host":"::","port":8081}
+{"_e":"metro:client_log","_t":1792855134555,"level":"error","data":["Project is incompatible with this version of Expo Go\n\n• The installed version of Expo Go is for SDK 58.\n• The project you opened uses SDK 57.\n\nHow to fix this error:\nEither upgrade this project to SDK 58 or install an older version of Expo Go that is compatible with your project.\n\n<a href='https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/'>Learn how to upgrade to SDK 58.</a>\n\n<a href='https://expo.dev/go?sdkVersion=57&platform=android&device=true'>Learn how to install Expo Go for SDK 57</a>."]}

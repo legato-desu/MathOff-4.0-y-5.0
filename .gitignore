@@ -24,3 +24,6 @@ frontend/.expo/
 
 # OCR model cache / large local model files
 backend/ocr-models/
+
+:memory:.ses
+*.ses
