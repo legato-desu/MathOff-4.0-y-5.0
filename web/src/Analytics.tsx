@@ -82,7 +82,7 @@ export default function Analytics({ user }: { user: User }) {
         </article>
       </section>
 
-      <section className="analytics-insight"><div className="insight-symbol">✦</div><div><span className="eyebrow">Lectura de los datos</span><h3>¿Qué nos dicen estas métricas?</h3><p>El panel resume el volumen de uso, la distribución de cuentas y los resultados de los ejercicios. Compara la tasa de acierto con la participación por ejercicio para identificar temas que podrían necesitar refuerzo. Si hay pocos registros, interpreta las tendencias con cautela.</p></div></section>
+      <section className="analytics-insight"><div className="insight-symbol">+</div><div><span className="eyebrow">Lectura de los datos</span><h3>¿Qué nos dicen estas métricas?</h3><p>El panel resume el volumen de uso, la distribución de cuentas y los resultados de los ejercicios. Compara la tasa de acierto con la participación por ejercicio para identificar temas que podrían necesitar refuerzo. Si hay pocos registros, interpreta las tendencias con cautela.</p></div></section>
       <footer className="analytics-footer">Panel de análisis exploratorio · MathOff · Usuario: {user.username} · Las métricas se calculan a partir de los registros existentes.</footer>
     </>}
   </div>;

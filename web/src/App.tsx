@@ -66,7 +66,7 @@ export default function App() {
   function logout() { saveSession(null); setSession(null); setTab('Inicio'); setAuthOpen(false); }
 
   return <div className={dark ? 'app dark' : 'app light'}>
-    <header className="topbar"><button className="brand" onClick={() => navigate('Inicio')}><span>✦</span> MathOff</button>
+    <header className="topbar"><button className="brand" onClick={() => navigate('Inicio')}><span>+</span> MathOff</button>
       <div className="top-actions">{session ? <><span className="account-tag">{session.user.username} · {session.user.role || 'Sin rol'}</span><button className="secondary small" onClick={logout}>Salir</button></> : <button className="small" onClick={() => setAuthOpen(true)}>Iniciar sesión</button>}</div>
     </header>
 
@@ -98,7 +98,7 @@ export default function App() {
 
     {authOpen && <div className="modal-backdrop" onClick={() => setAuthOpen(false)}><div className="auth-card" role="dialog" aria-modal="true" aria-label={registering ? 'Crear cuenta' : 'Iniciar sesión'} onClick={event => event.stopPropagation()}>
       <button className="close-button" aria-label="Cerrar" onClick={() => setAuthOpen(false)}>×</button>
-      <span className="eyebrow">✦ MathOff</span><h2>{registering ? 'Crear cuenta' : 'Bienvenido de nuevo'}</h2>
+      <span className="eyebrow">+ MathOff</span><h2>{registering ? 'Crear cuenta' : 'Bienvenido de nuevo'}</h2>
       <p className="muted">{registering ? 'Regístrate para guardar tu progreso.' : 'Ingresa para usar la cámara y el graficador.'}</p>
       <form className="stack-form" onSubmit={submitAuth}>
         <label className="field">Usuario<input value={username} onChange={event => setUsername(event.target.value)} autoComplete="username" required /></label>

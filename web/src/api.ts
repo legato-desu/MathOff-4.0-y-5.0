@@ -5,8 +5,6 @@ export type User = {
   role: string | null;
 };
 
-// En producción define VITE_API_URL con la URL pública del backend y el prefijo /api.
-// Ejemplo: https://api.tudominio.com/api
 const base = (import.meta.env.VITE_API_URL || (
   import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : 'https://mathoff-api.onrender.com/api'
 )).replace(/\/$/, '');

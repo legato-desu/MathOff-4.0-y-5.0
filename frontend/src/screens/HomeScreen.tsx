@@ -24,7 +24,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
 
       <View style={styles.header}>
-        <Text style={styles.logo}>✦ MathOff</Text>
+        <Text style={styles.logo}>MathOff</Text>
       </View>
 
       <TouchableOpacity activeOpacity={0.85} onPress={goToGraph}>
